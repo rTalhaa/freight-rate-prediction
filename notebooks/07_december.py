@@ -72,6 +72,7 @@ for column in ["market_index", "quote_signal"]:
     print(f"  vs naive whole-training-mean ({naive:.4f}): MAE {naive_mae:.4f}   "
           f"-> {1 - np.mean(np.abs(error)) / naive_mae:+.1%} better\n")
 
+
 # --------------------------------------------------------------------------
 section("3. FINAL MODEL (trained on all of Jan-Oct)")
 config = best_config()
@@ -126,6 +127,45 @@ print(by_dow.mean().reindex(order).round(2).to_string())
 print("\nThe weekly cycle in market_index (lag-7 autocorrelation 0.97 in training)")
 print("is what gives the chart its shape. Without it the line would be flat,")
 print("since the trend is deliberately not extrapolated.")
+
+# --------------------------------------------------------------------------
+section("7. WHAT THE FLAT LEVEL MISSES")
+print("The forecast repeats every 7 days, so the 31 predictions take only 7")
+print("distinct values. This checks whether that discards real structure.\n")
+
+actual_mi = december_actual.groupby("date")["market_index"].mean()
+residual = pd.Series(actual_mi.to_numpy() - predicted["market_index"].to_numpy(),
+                     index=actual_mi.index)
+
+print(f"variance of December market_index explained: "
+      f"{1 - residual.var() / actual_mi.var():.1%}")
+print("  -> the weekly cycle really is the dominant structure, so a repeating")
+print("     weekly shape is not an oversimplification.\n")
+
+print(f"residual std {residual.std():.4f} | lag-1 autocorrelation "
+      f"{residual.autocorr(1):+.3f}")
+print("  -> residuals are not noise, they drift monotonically across the month:")
+first, second = actual_mi.iloc[:15].mean(), actual_mi.iloc[16:].mean()
+print(f"     actual level Dec 1-15 {first:.4f} -> Dec 17-31 {second:.4f} "
+      f"({second / first - 1:+.2%})")
+print("     The market rose steadily through December; a flat level caught none of it.")
+
+rate_span = float(december["predicted_rate"].max() - december["predicted_rate"].min())
+mi_span = float(predicted["market_index"].max() - predicted["market_index"].min())
+sensitivity = rate_span / mi_span
+worst = float(residual.abs().max() * sensitivity)
+mean_rate = float(december["predicted_rate"].mean())
+print(f"\nthis lane moves about ${sensitivity:.0f} of rate per 1.0 of market_index")
+print(f"  unmodelled movement: ~${residual.std() * sensitivity:.2f} typical, "
+      f"${worst:.2f} on the worst day")
+print(f"  against a mean predicted rate of ${mean_rate:,.2f} "
+      f"-> {worst / mean_rate:.2%}")
+print("\nNot corrected. The 7-day trailing level was chosen by backtesting the last")
+print("61 days of training, and December drifting upward was not knowable from")
+print("October data. Fitting that drift now, knowing the outcome, would be tuning")
+print("to the test set - the exact error the Fourier, recency weighting and trend")
+print("damping results each warned about. The ~$1 miss is the price of that")
+print("discipline, and it is stated rather than hidden.")
 
 december.to_csv(Path(__file__).resolve().parents[1] / "data" / "december_predicted.csv",
                 index=False)

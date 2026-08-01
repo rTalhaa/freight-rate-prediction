@@ -317,11 +317,30 @@ Predictions run \$828.27 to \$842.43, mean \$835.72. The historical anchor --- 3
 training loads on this exact lane --- averages \$856.59, so predictions sit 2.4\%
 below history, consistent with December's softer market.
 
-The line repeats every seven days because the level is flat by design and the
-weekly cycle is the only varying input. That repetition is a consequence of not
-extrapolating the trend, not an artefact. Given the audit above, the flat level
-was the correct call: inventing December drift the data cannot support is the
-mistake this project measured three separate times.
+The line repeats every seven days, so \key{the 31 predictions take only 7 distinct
+values}: the level is flat by design and the weekly cycle is the only varying
+input. That is worth examining rather than glossing over.
+
+The repetition is justified. The forecast explains \key{97.7\% of the variance} in
+December's actual daily \texttt{market\_index} --- the real series also oscillates
+on a 7-day period between 0.83 and 1.04, so a repeating weekly shape reflects the
+series rather than oversimplifying it.
+
+But the residuals are not noise. Lag-1 autocorrelation is $+0.963$, and they drift
+monotonically from $-0.019$ on 1 December to $+0.016$ on 31 December: the actual
+level moved from 0.9207 over Dec 1--15 to 0.9487 over Dec 17--31, a rise of 3.05\%
+that the flat level caught none of.
+
+On this lane that is worth about \$72 of rate per 1.0 of \texttt{market\_index},
+so the unmodelled movement comes to \key{\$0.77 typically and \$1.39 on the worst
+day} --- 0.17\% of the \$835.72 mean.
+
+It is not corrected. The 7-day trailing level was chosen by backtesting the last
+61 days of training, and December drifting upward was not knowable from October
+data. Fitting that drift now, knowing the outcome, would be tuning to the test set
+--- the exact error the Fourier terms, recency weighting and trend damping results
+each warned about. \key{The flat level was correct to within \$1.39 on the worst
+day}, which is the price of that discipline rather than a free win.
 
 \section{Results and Limitations}
 
@@ -360,6 +379,10 @@ fortnight against \$64 in the last. Late-December predictions are inherently
 weaker. That is a property of the task, not something the model removes.
 \item \textbf{Unseen geography costs $+18.6\%$ MAPE}, measured by simulation
 because the temporal holdout cannot test it.
+\item \textbf{The December market forecast misses a real drift.} December's level
+rose 3.05\% across the month and the flat forecast captured none of it, leaving a
+systematic residual worth up to \$1.39 on the chart lane. Knowable only in
+hindsight, so left uncorrected.
 \end{itemize}
 
 \vspace{6pt}

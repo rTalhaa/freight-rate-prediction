@@ -79,13 +79,43 @@ Weekday pattern, which is the whole shape of the line:
 | 828.25 | 833.41 | 840.22 | **840.18** | 837.95 | 832.13 | **826.88** |
 
 Midweek peak, weekend trough, ~$13 amplitude. The line repeats exactly every
-seven days because the level is flat by design and the weekly profile is the
-only varying input.
+seven days, so **the 31 predictions take only 7 distinct values** — the level is
+flat by design and the weekly profile is the only varying input.
 
-That repetition is a deliberate consequence, not an artefact: the trend is not
-extrapolated, so the model asserts no view on whether December drifts up or
-down. Given the audit above — the forecast tracked the real December series to
-within 1% — the flat level was the correct call.
+## What the flat level misses
+
+The repetition is justified: the forecast explains **97.7% of the variance** in
+December's actual daily `market_index`. The real series also oscillates on a
+7-day period between 0.83 and 1.04, so a repeating weekly shape reflects the
+series rather than oversimplifying it.
+
+But the residuals are **not noise**. Lag-1 autocorrelation is +0.963, and they
+drift monotonically from −0.019 on 1 December to +0.016 on 31 December:
+
+| | Actual level |
+|---|---|
+| Dec 1–15 | 0.9207 |
+| Dec 17–31 | 0.9487 |
+| **Drift** | **+3.05%** |
+
+The market rose steadily through December and the flat level caught none of it.
+
+In dollars, on this lane:
+
+| | |
+|---|---|
+| Rate sensitivity | ~$72 per 1.0 of `market_index` |
+| Typical unmodelled movement | **$0.77** |
+| Worst day | **$1.39** (0.17% of the $835.72 mean) |
+
+**Not corrected.** The 7-day trailing level was chosen by backtesting the last 61
+days of training, and December drifting upward was not knowable from October
+data. Fitting that drift now, knowing the outcome, would be tuning to the test
+set — the exact error the Fourier terms, recency weighting and trend damping
+results each warned about. The ~$1 miss is the price of that discipline.
+
+So the flat level was correct to within **$1.39 on the worst day**, not correct
+in the abstract.
 
 ## Known limitation
 
