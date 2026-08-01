@@ -220,15 +220,24 @@ def prepare() -> dict[str, pd.DataFrame | CleaningStats]:
     train_raw, valid_raw, december_raw = load_all()
     fit_raw, holdout_raw = temporal_split(train_raw)
 
+    # Two sets of cleaning parameters, each fitted on everything that is history
+    # for its consumer:
+    #   stats      - Jan-Aug only, for the holdout experiment. Sep-Oct must stay
+    #                unseen, including by the imputation medians.
+    #   stats_full - all of Jan-Oct, for the model that predicts Nov-Dec. The
+    #                whole training file is genuinely past at that point, so
+    #                withholding Sep-Oct here would be stale, not safe.
     stats = fit_cleaning(fit_raw)
+    stats_full = fit_cleaning(train_raw)
 
     return {
         "stats": stats,
+        "stats_full": stats_full,
         # Training folds get cleaned labels; the holdout keeps its contamination.
         "fit": drop_corrupt_labels(clean(fit_raw, stats)),
         "holdout": clean(holdout_raw, stats),
-        # Full development set, for refitting once hyperparameters are settled.
-        "full": drop_corrupt_labels(clean(train_raw, stats)),
-        "validation": clean(valid_raw, stats),
-        "december": clean(december_raw, stats),
+        # Final-model inputs.
+        "full": drop_corrupt_labels(clean(train_raw, stats_full)),
+        "validation": clean(valid_raw, stats_full),
+        "december": clean(december_raw, stats_full),
     }

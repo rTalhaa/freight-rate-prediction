@@ -32,7 +32,10 @@ class FeatureConfig:
     time: bool = True
     geo: bool = True
     lane: bool = True
-    interactions: bool = True
+    # Off by default: the market_index x distance effect is real, but ridge
+    # already captures it via log_distance, so the explicit terms cost $1.65 of
+    # MAE. Defaults are the measured-best configuration.
+    interactions: bool = False
     # Annual Fourier terms, off by default. Measured to be actively harmful here
     # - see _time_block and notebooks/04_features.py section 2.
     fourier: bool = False

@@ -161,7 +161,7 @@ print("  diverge and the extrapolation breaks. Same trap awaits Phase 5.")
 # 3. Leave-one-group-out - does each group carry its own weight?
 # --------------------------------------------------------------------------
 section("3. LEAVE-ONE-GROUP-OUT (from the full set)")
-full = FeatureConfig()
+full = FeatureConfig(interactions=True)  # superset, so leave-one-out can measure each group
 full_metrics = run(full, model="ridge")
 print(f"full set                    MAE ${full_metrics['MAE']:8.2f}")
 for group in ("time", "geo", "lane", "interactions"):
@@ -219,4 +219,5 @@ section("SUMMARY")
 print(f"Phase 2b baseline (ridge, base features)  MAE ${BASELINE_MAE:.2f}")
 print(f"Phase 3  (full features, uniform weights) MAE ${full_metrics['MAE']:.2f}")
 print(f"Phase 3  (full features, best weighting)  MAE ${weighting.loc[best_mae, 'MAE']:.2f}")
+
 

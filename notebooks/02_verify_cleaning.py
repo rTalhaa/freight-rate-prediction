@@ -56,14 +56,18 @@ print(f"  valid  negative weight {(valid_raw.weight < 0).sum():4d} | "
       f"null market_index {valid_raw.market_index.isna().sum():4d}")
 
 section("2. CLEANED OUTPUTS ARE DEFECT-FREE")
-for name in ["fit", "holdout", "full", "validation"]:
+# Holdout-experiment datasets use Jan-Aug parameters; final-model datasets use
+# the full Jan-Oct window. Each is checked against the parameters it was built with.
+OWNER = {"fit": stats, "holdout": stats, "full": bundle["stats_full"],
+         "validation": bundle["stats_full"]}
+for name, owning_stats in OWNER.items():
     df = bundle[name]
     check(f"{name:11s} no negative weight", (df.weight < 0).sum() == 0)
     check(f"{name:11s} no null weight    ", df.weight.isna().sum() == 0)
     check(f"{name:11s} no null market_idx", df.market_index.isna().sum() == 0)
     check(f"{name:11s} circuity capped   ",
-          df.circuity.max() <= stats.circuity_cap + 1e-9,
-          f"max {df.circuity.max():.3f} <= {stats.circuity_cap:.3f}")
+          df.circuity.max() <= owning_stats.circuity_cap + 1e-9,
+          f"max {df.circuity.max():.3f} <= {owning_stats.circuity_cap:.3f}")
 
 section("3. FLAGS PRESERVE THE DEFECT COUNTS")
 valid_clean = bundle["validation"]
