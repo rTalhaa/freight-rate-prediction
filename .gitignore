@@ -22,3 +22,6 @@ models/*.txt
 Thumbs.db
 .vscode/
 .idea/
+
+# Working artefacts
+data/december_predicted.csv
