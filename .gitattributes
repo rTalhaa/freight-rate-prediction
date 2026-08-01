@@ -1,0 +1,5 @@
+# Keep line endings stable across platforms; data files stay byte-identical.
+* text=auto eol=lf
+*.csv -text
+*.pdf -text
+*.png -text
