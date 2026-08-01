@@ -97,4 +97,4 @@ and give the trees only the residual, with no extrapolation demanded of them.
 ## Remaining
 
 Bias is **−$31.63** in the best configuration — roughly −1.3% of mean rate. Not
-eliminated, and validation sits two months further out than this holdout.
+eliminated. Addressed in `docs/damping.md`.

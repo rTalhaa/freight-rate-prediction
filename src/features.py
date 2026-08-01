@@ -40,10 +40,25 @@ class FeatureConfig:
     # - see _time_block and notebooks/04_features.py section 2.
     fourier: bool = False
     day_of_week: bool = False
+    # How far the trend is allowed to keep running past the last training date.
+    # 1.0 extrapolates at full slope, 0.0 freezes the level at the window edge.
+    # See _time_block and notebooks/06_damping.py.
+    trend_damping: float = 1.0
 
     def label(self) -> str:
         on = [n for n in ("time", "geo", "lane", "interactions") if getattr(self, n)]
         return "base" + ("+" + "+".join(on) if on else "")
+
+
+def best_config() -> "FeatureConfig":
+    """
+    The measured-best configuration, for production use.
+
+    base + time + geo + lane, no interactions, no Fourier, and a fully damped
+    trend. Kept as a named constructor rather than as dataclass defaults so the
+    earlier notebooks continue to reproduce the numbers recorded in docs/.
+    """
+    return FeatureConfig(trend_damping=0.0)
 
 
 @dataclass
@@ -55,6 +70,8 @@ class FeatureStats:
     delivery_rpm: dict[str, float] = field(default_factory=dict)
     lane_count: dict[str, int] = field(default_factory=dict)
     global_rpm: float = np.nan
+    # Last day covered by training. Everything past it is extrapolation.
+    trend_max_days: float = np.inf
 
 
 def fit_feature_stats(train: pd.DataFrame) -> FeatureStats:
@@ -66,6 +83,7 @@ def fit_feature_stats(train: pd.DataFrame) -> FeatureStats:
         delivery_rpm=rpm.groupby(train["delivery"]).mean().to_dict(),
         lane_count=train["lane"].value_counts().to_dict(),
         global_rpm=float(rpm.mean()),
+        trend_max_days=float((train["date"].max() - ORIGIN).days),
     )
 
 
@@ -97,10 +115,25 @@ def _base_block(frame: pd.DataFrame) -> dict[str, np.ndarray]:
 
 
 def _time_block(
-    frame: pd.DataFrame, fourier: bool = False, day_of_week: bool = False
+    frame: pd.DataFrame,
+    stats: FeatureStats,
+    fourier: bool = False,
+    day_of_week: bool = False,
+    damping: float = 1.0,
 ) -> dict[str, np.ndarray]:
     """
     Time features that survive extrapolation.
+
+    The trend is damped past the end of training:
+
+        t_eff = t_max + damping * (t - t_max)   for t > t_max
+
+    Inside the window nothing changes. Outside it the projection advances at a
+    fraction of the fitted slope, so a turn in the market costs a level error
+    instead of a runaway one. damping=1.0 is undamped, 0.0 freezes the level at
+    the last training date. Phase 4 measured the cost of leaving it at 1.0: per-
+    fold bias of +$19, +$84, -$30, because rate-per-mile rose through June and
+    then fell.
 
     A bare linear trend, by measurement rather than preference. Month dummies are
     not an option at all: November and December never appear in training.
@@ -117,6 +150,13 @@ def _time_block(
     ~2.5% and including it costs $2 of MAE.
     """
     days = (frame["date"] - ORIGIN).dt.days.to_numpy(dtype=float)
+    if damping != 1.0 and np.isfinite(stats.trend_max_days):
+        beyond = days > stats.trend_max_days
+        days = np.where(
+            beyond,
+            stats.trend_max_days + damping * (days - stats.trend_max_days),
+            days,
+        )
     out = {"trend_days": days}
     if fourier:
         angle = 2 * np.pi * days / DAYS_PER_YEAR
@@ -240,7 +280,8 @@ def build_features(
     config = config or FeatureConfig()
     blocks = _base_block(frame)
     if config.time:
-        blocks.update(_time_block(frame, config.fourier, config.day_of_week))
+        blocks.update(_time_block(frame, stats, config.fourier, config.day_of_week,
+                                  config.trend_damping))
     if config.geo:
         blocks.update(_geo_block(frame))
     if config.lane:

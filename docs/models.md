@@ -83,6 +83,11 @@ and projected into Jul–Aug overshoots by $84; the same mechanism under-predict
 in Sep–Oct by $30. The trend feature fixes the *average* level error but its
 extrapolation swings with whatever the recent slope happened to be.
 
-Validation is a 61-day horizon starting two months past the end of training, so
-this is the largest remaining source of error — and it lands directly on the
-December chart, where date is the only varying input.
+The final model trains through 2025-10-31 and predicts 2025-11-01 onward, so the
+real task is a **1–61 day** forward horizon — exactly what these folds simulate.
+(An earlier draft described it as starting two months past training; that was
+wrong. The folds are a faithful analogue, not an optimistic one.)
+
+This is still the largest remaining source of error, and it lands hardest on the
+December chart, which sits 31–61 days out with date as the only varying input.
+Addressed in `docs/damping.md`.
