@@ -25,15 +25,15 @@ Hybrid model, three rolling folds:
 
 | φ | mean MAE | worst MAE | max abs bias | MAE spread |
 |---|---|---|---|---|
-| 1.0 | 110.60 | 137.86 | 83.85 | 42.02 |
-| 0.8 | 108.84 | 132.99 | 78.15 | 38.83 |
-| 0.6 | 107.34 | 128.30 | 72.47 | 35.34 |
-| 0.5 | 106.69 | 126.04 | 69.64 | 33.46 |
-| 0.4 | 106.12 | 123.84 | 66.81 | 31.51 |
-| 0.3 | 105.62 | 121.70 | 63.99 | 29.49 |
-| 0.2 | 105.19 | 119.62 | 61.17 | 27.39 |
-| 0.1 | 104.85 | 117.62 | 58.35 | 25.20 |
-| **0.0** | **104.59** | **115.69** | **55.54** | **22.93** |
+| 1.0 | 110.74 | 138.31 | 84.21 | 42.82 |
+| 0.8 | 109.00 | 133.44 | 78.51 | 39.60 |
+| 0.6 | 107.51 | 128.72 | 72.83 | 36.01 |
+| 0.5 | 106.87 | 126.44 | 69.99 | 34.10 |
+| 0.4 | 106.30 | 124.21 | 67.16 | 32.10 |
+| 0.3 | 105.81 | 122.05 | 64.34 | 30.02 |
+| 0.2 | 105.39 | 119.96 | 61.51 | 27.87 |
+| 0.1 | 105.06 | 117.95 | 58.70 | 25.63 |
+| **0.0** | **104.80** | **116.01** | **55.88** | **23.32** |
 
 **φ=0.0 wins every criterion, monotonically.** Selection was set up to prefer
 robustness over mean MAE in case they disagreed. They did not.
@@ -42,11 +42,17 @@ Per-fold MAE shows the trade honestly:
 
 | φ | May–Jul | Jul–Aug | Sep–Oct |
 |---|---|---|---|
-| 1.0 | 95.84 | 137.86 | **98.09** |
-| 0.0 | 92.76 | **115.69** | 105.32 |
+| 1.0 | 95.49 | 138.31 | **98.43** |
+| 0.0 | 92.69 | **116.01** | 105.72 |
 
 Freezing costs $7 on Sep–Oct, where the trend happened to point the right way,
 and saves $22 on Jul–Aug, where it did not. Worst case improves by 16%.
+
+At a **30-day** horizon (6 folds, `notebooks/08_diagnostics.py`) the picture
+softens: φ=0.0 still leads on mean MAE (98.59 vs 99.90) and max abs bias (40.19
+vs 54.22), but worst-fold MAE marginally favours φ=1.0 (110.15 vs 112.51).
+Damping matters more the further ahead you predict, which is what one would
+expect. The real task is 61 days, so φ=0.0 stands.
 
 ## What this means
 

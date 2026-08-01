@@ -21,20 +21,23 @@ statistics are refitted per fold on that fold's training rows only.
 
 | Model | RMSE | MAE | MAPE | MedAPE | Bias (clean) |
 |---|---|---|---|---|---|
-| **Hybrid (shrink 0.5)** | 629.5 | **110.32** | 4.66 | 2.01 | +21.12 |
-| Hybrid (shrink 1.0) | 629.7 | 110.60 | 4.63 | 1.88 | +24.30 |
-| Hybrid (shrink 0.3) | 629.8 | 111.87 | 4.75 | 2.12 | +19.98 |
-| LightGBM | 633.0 | 114.40 | 4.78 | 1.92 | −19.39 |
-| Ridge | 630.5 | 115.65 | 4.95 | 2.32 | +18.38 |
+| **Hybrid (shrink 0.5)** | 629.6 | **110.45** | 4.67 | 2.02 | +20.95 |
+| Hybrid (shrink 1.0) | 629.9 | 110.74 | 4.64 | 1.89 | +23.95 |
+| Hybrid (shrink 0.3) | 629.9 | 111.97 | 4.76 | 2.13 | +19.87 |
+| LightGBM | 632.9 | 114.65 | 4.79 | 1.94 | −19.54 |
+| Ridge | 630.5 | 115.66 | 4.95 | 2.32 | +18.38 |
 
 On the Sep–Oct holdout alone (comparable to Phase 3):
 
 | Model | MAE | MAPE | MedAPE |
 |---|---|---|---|
-| **Hybrid (shrink 1.0)** | **98.09** | 4.23 | 1.47 |
-| Hybrid (shrink 0.5) | 100.82 | 4.38 | 1.57 |
-| Ridge | 106.99 | 4.67 | 1.81 |
-| LightGBM | 110.36 | 4.69 | 1.95 |
+| **Hybrid (shrink 1.0)** | **98.43** | 4.24 | 1.48 |
+| Ridge | 107.00 | 4.67 | 1.81 |
+| LightGBM | 111.21 | 4.71 | 1.99 |
+
+Confirmed on **6 folds at a 30-day horizon** (`notebooks/08_diagnostics.py`):
+hybrid 98.59 vs ridge 105.82 mean MAE, so the ranking is not an artefact of
+three folds.
 
 ## The hybrid works, and the reason is the one predicted
 

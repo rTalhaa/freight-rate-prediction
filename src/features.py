@@ -210,13 +210,23 @@ def _lane_block(
     """
     lanes = frame["lane"]
     if expanding:
+        # Strictly earlier DATES, not merely earlier rows. Excluding only the row
+        # itself would still let loads sharing its date inform its feature, which
+        # is the same within-window leak the temporal split exists to prevent -
+        # just at one-day resolution.
         rpm = frame["posted_rate"] / frame["distance"]
-        grouped = rpm.groupby(lanes)
-        # Prior mean = (running total - this row) / (rows seen before this one).
-        prior_sum = grouped.cumsum() - rpm
-        prior_count = grouped.cumcount()
-        lane_rpm = (prior_sum / prior_count.where(prior_count > 0)).to_numpy(dtype=float)
-        lane_count = prior_count.to_numpy(dtype=float)
+        per_day = (
+            pd.DataFrame({"lane": lanes, "date": frame["date"], "rpm": rpm})
+            .groupby(["lane", "date"], sort=True)["rpm"]
+            .agg(["sum", "size"])
+        )
+        cumulative = per_day.groupby(level="lane").cumsum()
+        prior = cumulative.groupby(level="lane").shift(1)
+        prior["mean"] = prior["sum"] / prior["size"].where(prior["size"] > 0)
+
+        key = pd.MultiIndex.from_arrays([lanes, frame["date"]])
+        lane_rpm = prior["mean"].reindex(key).to_numpy(dtype=float)
+        lane_count = np.nan_to_num(prior["size"].reindex(key).to_numpy(dtype=float))
     else:
         lane_rpm = lanes.map(stats.lane_rpm).to_numpy(dtype=float)
         lane_count = lanes.map(stats.lane_count).fillna(0).to_numpy(dtype=float)
