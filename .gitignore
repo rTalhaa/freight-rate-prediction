@@ -25,3 +25,9 @@ Thumbs.db
 # Working artefacts
 data/december_predicted.csv
 
+
+# LaTeX build artefacts
+report/*.aux
+report/*.log
+report/*.out
+report/*.toc
